@@ -1,0 +1,110 @@
+// Importing `ref` and `computed` from the `vue` library
+import { ref, computed } from 'vue'
+
+// Creating an array of question objects and making it a reactive variable using `ref`
+const questions = ref([
+  {
+    question: 'what is Vue Js?', // the question to be displayed
+    answer: 0, // the index of the correct answer in the `options` array
+    options: [
+      'front end framwork', // option 1
+      'back end framwork', // option 2
+      'full stack framwork', // option 3
+      'none of the above' // option 4
+    ],
+    selected: null // the index of the option selected by the user
+  },
+  // Two more similar question objects follow...
+
+])
+
+// Creating a reactive variable `quizCompleted` and initializing it to `false`
+const quizCompleted = ref(false)
+
+// Creating a reactive variable `currentQuestion` and initializing it to `0`
+const currentQuestion = ref(0)
+
+// Creating a computed property `score` which calculates the number of correct answers
+const score = computed(() => {
+  let value = 0
+  questions.value.map(q => {
+    if (q.selected == q.answer) {
+      value++
+    }
+  })
+  return value;
+})
+
+// Creating a computed property `getCurrentQuestion` which returns the current question object
+const getCurrentQuestion = computed(() => {
+  let question = questions.value[currentQuestion.value]
+  question.index = currentQuestion.value
+  return question
+})
+
+// Creating a function `setAnswer` which sets the selected option for the current question
+const setAnswer = evt => {
+  questions.value[currentQuestion.value].selected = evt.target.value
+  evt.target.value = null
+}
+
+// Creating a function `nextQuestion` which moves to the next question or ends the quiz if all questions have been answered
+const nextQuestion = () => {
+  if (currentQuestion.value < questions.value.length - 1) {
+    currentQuestion.value++
+  } else {
+    quizCompleted.value = true
+  }
+}
+
+<template>
+  <main class="app">
+    <h1>The Quiz</h1>
+
+    <!-- Show the quiz section if it is not completed -->
+    <section class="quiz" v-if="!quizCompleted">
+
+      <!-- Display the current question and the score -->
+      <div class="quiz-info">
+        <span class="question"> {{ getCurrentQuestion.question }}</span>
+        <span class="score">Score: {{ score }}/{{ questions.length }}</span>
+      </div>
+
+      <!-- Display the answer options for the current question -->
+      <div class="options">
+        <label v-for="(options, index) in getCurrentQuestion.options" :key="index"
+          :class="`options ${getCurrentQuestion.selected == index
+          ? index == getCurrentQuestion.answer
+            ? 'correct'   // Add a class "correct" to the label if the selected answer is correct
+            : 'incorrect' // Add a class "incorrect" to the label if the selected answer is incorrect
+          : ''
+          } ${getCurrentQuestion.selected != null && index != getCurrentQuestion.selected
+            ? 'disabled' // Add a class "disabled" to the label if it's not selected and not the current option
+            : ''
+          }`">
+          <input type="radio" :name="getCurrentQuestion.index" :value="index" v-model="getCurrentQuestion.selected"
+            :disabled="getCurrentQuestion.selected" @change="setAnswer" />  <!-- Radio input to select the answer option -->
+          {{ options }}
+        </label>
+      </div>
+
+      <!-- Button to go to the next question -->
+      <button @click="nextQuestion" :disabled="!getCurrentQuestion.selected">
+        {{
+          getCurrentQuestion.index == questions.length - 1
+          ? 'Finish' // Show "Finish" if it is the last question
+          : getCurrentQuestion.selected == null
+            ? 'select an option' // Show "select an option" if the current question has not been answered
+            : 'next question' // Show "next question" if the current question has been answered
+        }}
+
+      </button>
+    </section>
+
+    <!-- Show the quiz completion section if it is completed -->
+    <section v-if="quizCompleted">
+      <h2>You have finished the quiz</h2>
+      <p> your score is {{ score }} / {{ questions.length }} </p>
+    </section>
+  </main>
+</template>
